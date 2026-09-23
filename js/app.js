@@ -268,23 +268,27 @@ function buildProductCard(product) {
     : '<button type="button" class="product-card__add" data-add-id="' + product.id + '">Добавить в корзину</button>';
   return `
     <article class="product-card product-card--rarity" style="border-color:${rarityStyle.border.includes('solid') ? rarityStyle.border : 'rgba(255,255,255,0.08)'}; box-shadow: var(--shadow), 0 0 20px ${rarityColors[product.rarity] || '#ffffff'}22;">
-      <div class="product-card__image-box">
-        <span class="product-card__badge" style="color:${rarityStyle.color}; border-color:${rarityStyle.color}66; background: rgba(8, 10, 12, 0.7);">${product.rarity}</span>
-        <img class="product-card__image" src="${product.image}" alt="${product.name}" />
+      <div class="product-card__rarity" style="--rarity-color:${rarityStyle.color};">
+        <span class="product-card__rarity-dot" aria-hidden="true"></span>
+        <span>${product.rarity}</span>
       </div>
       <div class="product-card__body">
         <div class="product-card__top">
           <h3 class="product-card__title">${product.name}</h3>
         </div>
         <div class="product-card__weapon">${product.weapon}</div>
+        <div class="product-card__price">${formatPrice(product.price)}</div>
         <div class="product-card__meta">
-          <span>Float: ${product.float.toFixed(2)}</span>
+          <span>Float: ${Number(product.float).toFixed(4)}</span>
           <span>${wear}</span>
           <span>Seed: ${product.seed}</span>
+          <span class="product-card__stattrak${product.stattrak ? ' is-active' : ''}">StatTrak™: ${product.stattrak ? 'Да' : 'Нет'}</span>
+        </div>
+        <div class="product-card__image-box">
+          <img class="product-card__image" src="${product.image}" alt="${product.name}" />
         </div>
         <p class="product-card__desc">${product.description}</p>
         <div class="product-card__footer">
-          <div class="product-card__price">${formatPrice(product.price)}</div>
           <div class="product-card__actions">
             <button type="button" class="product-card__detail" data-detail-id="${product.id}">Подробнее</button>
             ${cartState}
