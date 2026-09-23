@@ -18,7 +18,26 @@ function safeParseJSON(value, fallback) {
 
 function loadCart() {
   const saved = safeParseJSON(localStorage.getItem(cartKey), []);
-  return Array.isArray(saved) ? saved : [];
+  if (!Array.isArray(saved)) return [];
+
+  const normalized = [];
+  saved.forEach((item) => {
+    if (!item || item.id === undefined) return;
+
+    const quantity = Math.floor(Number(item.quantity));
+    const price = Number(item.price);
+    if (!Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(price)) return;
+
+    const existing = normalized.find((entry) => String(entry.id) === String(item.id));
+    if (existing) {
+      existing.quantity += quantity;
+      return;
+    }
+
+    normalized.push({ ...item, price, quantity });
+  });
+
+  return normalized;
 }
 
 function saveCart() {
@@ -53,7 +72,7 @@ function renderCheckoutItems() {
     return;
   }
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   checkoutTotal.textContent = formatPrice(total);
 
   checkoutItems.innerHTML = items
@@ -63,7 +82,7 @@ function renderCheckoutItems() {
           <img class="checkout-item__thumb" src="${item.image}" alt="${item.name}" />
           <div class="checkout-item__text">
             <h3 class="checkout-item__title">${item.name}</h3>
-            <div class="checkout-item__meta">${item.weapon} · ${item.quantity} шт.</div>
+            <div class="checkout-item__meta">${item.weapon} · ${formatPrice(item.price)} × ${item.quantity}</div>
           </div>
           <div class="checkout-item__total">${formatPrice(item.price * item.quantity)}</div>
         </div>

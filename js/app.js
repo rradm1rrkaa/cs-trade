@@ -38,7 +38,26 @@ function safeParseJSON(value, fallback) {
 
 function loadCart() {
   const saved = safeParseJSON(localStorage.getItem(CART_KEY), []);
-  return Array.isArray(saved) ? saved : [];
+  if (!Array.isArray(saved)) return [];
+
+  const normalized = [];
+  saved.forEach((item) => {
+    const quantity = Math.floor(Number(item.quantity));
+    const price = Number(item.price);
+    if (item === null || item === undefined || item.id === undefined || !Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(price)) {
+      return;
+    }
+
+    const existing = normalized.find((entry) => String(entry.id) === String(item.id));
+    if (existing) {
+      existing.quantity += quantity;
+      return;
+    }
+
+    normalized.push({ ...item, price, quantity });
+  });
+
+  return normalized;
 }
 
 function saveCart() {
@@ -113,28 +132,41 @@ function showToast(message) {
   }, 2200);
 }
 
+function getCartItem(productId) {
+  return state.cart.find((item) => String(item.id) === String(productId));
+}
+
+function getCartQuantity(productId) {
+  const item = getCartItem(productId);
+  return item ? item.quantity : 0;
+}
+
+function updateCartUI() {
+  saveCart();
+  renderCart();
+  renderProducts();
+}
+
 function addToCart(productId) {
   const normalizedId = Number(productId);
   const product = state.allProducts.find((item) => Number(item.id) === normalizedId || String(item.id) === String(productId));
   if (!product) return;
 
-  const existing = state.cart.find((item) => Number(item.id) === normalizedId || String(item.id) === String(productId));
+  const existing = getCartItem(productId);
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity = Math.max(1, Math.floor(Number(existing.quantity)) || 1) + 1;
   } else {
     state.cart.push({ ...product, id: normalizedId || product.id, quantity: 1 });
   }
 
-  saveCart();
-  renderCart();
+  updateCartUI();
   showToast('✓ Скин добавлен в корзину');
 }
 
 function removeFromCart(productId) {
   const normalizedId = String(productId);
   state.cart = state.cart.filter((item) => String(item.id) !== normalizedId);
-  saveCart();
-  renderCart();
+  updateCartUI();
 }
 
 function updateQuantity(productId, delta) {
@@ -142,18 +174,17 @@ function updateQuantity(productId, delta) {
   const item = state.cart.find((entry) => String(entry.id) === normalizedId);
   if (!item) return;
 
-  item.quantity += delta;
+  item.quantity = Math.max(0, Math.floor(Number(item.quantity)) + Number(delta));
   if (item.quantity <= 0) {
     removeFromCart(productId);
     return;
   }
 
-  saveCart();
-  renderCart();
+  updateCartUI();
 }
 
 function calculateCartTotal() {
-  return state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return state.cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 }
 
 function renderCart() {
@@ -179,6 +210,7 @@ function renderCart() {
           <div class="cart-item__content">
             <h4 class="cart-item__title">${item.name}</h4>
             <p class="cart-item__meta">${item.weapon} · ${item.rarity}</p>
+            <p class="cart-item__unit-price">${formatPrice(item.price)} × ${item.quantity}</p>
             <div class="cart-item__controls">
               <div class="qty-controls" aria-label="Управление количеством">
                 <button class="qty-btn" type="button" data-action="decrease" data-id="${item.id}">−</button>
@@ -220,6 +252,17 @@ function closeCartDrawer() {
 function buildProductCard(product) {
   const wear = getWearCategory(product.float);
   const rarityStyle = getRarityStyle(product.rarity);
+  const quantity = getCartQuantity(product.id);
+  const cartState = quantity > 0
+    ? `
+      <div class="product-card__in-cart" role="status">✓ Уже в вашей корзине</div>
+      <div class="product-card__quantity qty-controls" aria-label="Количество товара">
+        <button class="qty-btn" type="button" data-card-action="decrease" data-id="${product.id}" aria-label="Уменьшить количество">−</button>
+        <span class="product-card__qty">${quantity}</span>
+        <button class="qty-btn" type="button" data-card-action="increase" data-id="${product.id}" aria-label="Увеличить количество">+</button>
+      </div>
+    `
+    : '<button type="button" class="product-card__add" data-add-id="' + product.id + '">Добавить в корзину</button>';
   return `
     <article class="product-card product-card--rarity" style="border-color:${rarityStyle.border.includes('solid') ? rarityStyle.border : 'rgba(255,255,255,0.08)'}; box-shadow: var(--shadow), 0 0 20px ${rarityColors[product.rarity] || '#ffffff'}22;">
       <div class="product-card__image-box">
@@ -241,7 +284,7 @@ function buildProductCard(product) {
           <div class="product-card__price">${formatPrice(product.price)}</div>
           <div class="product-card__actions">
             <button type="button" class="product-card__detail" data-detail-id="${product.id}">Подробнее</button>
-            <button type="button" class="product-card__add" data-add-id="${product.id}">Добавить</button>
+            ${cartState}
           </div>
         </div>
       </div>
@@ -307,6 +350,14 @@ function renderProducts() {
 
   productGrid.querySelectorAll('[data-add-id]').forEach((button) => {
     button.addEventListener('click', () => addToCart(button.dataset.addId));
+  });
+
+  productGrid.querySelectorAll('[data-card-action="increase"]').forEach((button) => {
+    button.addEventListener('click', () => updateQuantity(button.dataset.id, 1));
+  });
+
+  productGrid.querySelectorAll('[data-card-action="decrease"]').forEach((button) => {
+    button.addEventListener('click', () => updateQuantity(button.dataset.id, -1));
   });
 
   productGrid.querySelectorAll('[data-detail-id]').forEach((button) => {
