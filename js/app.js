@@ -145,6 +145,9 @@ function updateCartUI() {
   saveCart();
   renderCart();
   renderProducts();
+  if (!productModal.classList.contains('hidden') && modalContent.dataset.productId) {
+    openProductModal(modalContent.dataset.productId);
+  }
 }
 
 function addToCart(productId) {
@@ -366,32 +369,60 @@ function renderProducts() {
 }
 
 function openProductModal(productId) {
-  const product = state.allProducts.find((item) => item.id === productId);
+  const product = state.allProducts.find((item) => String(item.id) === String(productId));
   if (!product) return;
 
   const wear = getWearCategory(product.float);
+  const rarityColor = rarityColors[product.rarity] || '#ffffff';
+  const quantity = getCartQuantity(product.id);
+  const cartState = quantity > 0
+    ? `
+      <div class="modal-cart-status" role="status">✓ Уже в вашей корзине</div>
+      <div class="modal-cart-controls qty-controls" aria-label="Количество товара">
+        <button class="qty-btn" type="button" data-modal-action="decrease" data-id="${product.id}" aria-label="Уменьшить количество">−</button>
+        <span class="modal-cart-qty">${quantity}</span>
+        <button class="qty-btn" type="button" data-modal-action="increase" data-id="${product.id}" aria-label="Увеличить количество">+</button>
+      </div>
+      <div class="modal-cart-total">Итого за товар: <strong>${formatPrice(product.price * quantity)}</strong></div>
+    `
+    : `<button type="button" class="product-card__add modal-cart-add" data-modal-action="add" data-id="${product.id}">Добавить в корзину</button>`;
+
   modalContent.innerHTML = `
-    <img class="modal-content__image" src="${product.image}" alt="${product.name}" />
-    <div>
-      <h3 class="modal-content__title">${product.name}</h3>
+    <div class="modal-content__media">
+      <img class="modal-content__image" src="${product.image}" alt="${product.name}" />
+    </div>
+    <div class="modal-content__details">
+      <h3 id="modalTitle" class="modal-content__title">${product.name}</h3>
+      <div class="modal-content__price">${formatPrice(product.price)}</div>
       <div class="modal-content__meta">
-        <span>${product.weapon}</span>
-        <span>${product.rarity}</span>
-        <span>Float: ${product.float.toFixed(2)}</span>
-        <span>${wear}</span>
+        <span>Оружие: ${product.weapon}</span>
+        <span style="color:${rarityColor}; border-color:${rarityColor}66">Редкость: ${product.rarity}</span>
+        <span>Float Value: ${Number(product.float).toFixed(4)}</span>
+        <span>Износ: ${wear}</span>
+        <span>Pattern / Seed: ${product.seed}</span>
+        <span class="modal-stattrak${product.stattrak ? ' is-active' : ''}">StatTrak™: ${product.stattrak ? 'Да' : 'Нет'}</span>
       </div>
       <p class="modal-content__description">${product.description}</p>
-      <p class="modal-content__description"><strong>Pattern / Seed:</strong> ${product.seed}</p>
-      <p class="modal-content__description"><strong>StatTrak:</strong> ${product.stattrak ? '★ StatTrak™ · Счётчик убийств' : 'Нет'}</p>
-      <div class="modal-content__price">${formatPrice(product.price)}</div>
+      <div class="modal-cart" data-modal-cart>${cartState}</div>
     </div>
   `;
+  modalContent.dataset.productId = product.id;
 
   productModal.classList.remove('hidden');
+  modalContent.querySelectorAll('[data-modal-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.modalAction;
+      if (action === 'add') addToCart(product.id);
+      if (action === 'increase') updateQuantity(product.id, 1);
+      if (action === 'decrease') updateQuantity(product.id, -1);
+      openProductModal(product.id);
+    });
+  });
 }
 
 function closeProductModal() {
   productModal.classList.add('hidden');
+  modalContent.dataset.productId = '';
 }
 
 function handleSaleSubmit(event) {
