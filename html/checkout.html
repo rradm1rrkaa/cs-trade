@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CS.Trade — оформление заказа</title>
+    <meta name="description" content="Оформление заказа на CS.Trade" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/checkout.css" />
+  </head>
+  <body>
+    <header class="site-header checkout-header">
+      <div class="container header-inner">
+        <a href="index.html" class="brand" aria-label="CS.Trade home">
+          <span class="brand-mark">C</span>
+          <span class="brand-text">CS.Trade</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Главное меню">
+          <a href="index.html" class="nav-link">Главная</a>
+          <a href="index.html#catalog" class="nav-link">Покупка</a>
+          <a href="index.html#sale" class="nav-link">Продажа</a>
+        </nav>
+
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Сменить тему">
+          <span class="theme-icon">☀</span>
+          <span class="theme-label">Светлая тема</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="checkout-page">
+      <div class="container checkout-layout">
+        <section class="checkout-summary panel">
+          <div class="section-heading compact">
+            <div>
+              <span class="eyebrow">Заказ</span>
+              <h2>Сводка заказа</h2>
+            </div>
+          </div>
+
+          <div id="checkoutItems" class="checkout-items" aria-live="polite"></div>
+          <div class="checkout-total">
+            <span>Итого:</span>
+            <strong id="checkoutTotal">0 ₸</strong>
+          </div>
+        </section>
+
+        <section class="payment-panel panel">
+          <div class="section-heading compact">
+            <div>
+              <span class="eyebrow">Оплата</span>
+              <h2>Данные карты</h2>
+            </div>
+          </div>
+
+          <form id="paymentForm" class="payment-form" novalidate>
+            <div class="field-group">
+              <label for="cardNumber">Номер карты</label>
+              <input id="cardNumber" name="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19" />
+              <small class="error-message" data-error-for="cardNumber"></small>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="expiryDate">Срок действия</label>
+                <input id="expiryDate" name="expiryDate" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" />
+                <small class="error-message" data-error-for="expiryDate"></small>
+              </div>
+
+              <div class="field-group">
+                <label for="cvv">CVV</label>
+                <input id="cvv" name="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="3" />
+                <small class="error-message" data-error-for="cvv"></small>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="firstName">Имя</label>
+                <input id="firstName" name="firstName" type="text" autocomplete="given-name" placeholder="Иван" />
+                <small class="error-message" data-error-for="firstName"></small>
+              </div>
+
+              <div class="field-group">
+                <label for="lastName">Фамилия</label>
+                <input id="lastName" name="lastName" type="text" autocomplete="family-name" placeholder="Иванов" />
+                <small class="error-message" data-error-for="lastName"></small>
+              </div>
+            </div>
+
+            <button type="submit" class="primary-btn payment-submit">ОПЛАТИТЬ</button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <div id="successModal" class="success-modal hidden" aria-modal="true" role="dialog" aria-labelledby="successTitle">
+      <div class="success-modal__backdrop" data-close-success="true"></div>
+      <div class="success-modal__card">
+        <div class="success-mark">✓</div>
+        <h3 id="successTitle">Оплата успешно выполнена!</h3>
+        <p>Спасибо за покупку на CS.Trade.<br />Заказ оформлен.</p>
+      </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/checkout.js"></script>
+  </body>
+</html>
